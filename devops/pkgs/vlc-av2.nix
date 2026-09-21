@@ -228,7 +228,8 @@ PY
     "-Dfreetype=auto"
     "-Dfontconfig=auto"
     "-Dpng=enabled"
-  ];
+  ]
+  ++ lib.optional (!stdenv.hostPlatform.isAarch64) "-Dbranch_protection=disabled";
 
   dontWrapGApps = true;
 
