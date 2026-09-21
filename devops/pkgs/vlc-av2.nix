@@ -168,6 +168,10 @@ stdenv.mkDerivation rec {
     substituteInPlace modules/meson.build \
       --replace-fail "shortname: shortname," ""
 
+    # Nix's sandbox has no /usr/bin/env python3. Point the generators at the
+    # python3 on PATH before Meson records their shebangs.
+    patchShebangs buildsystem
+
     if ! grep -q "option('dav2d'" meson_options.txt; then
       cat >> meson_options.txt <<'EOF'
 
