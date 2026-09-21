@@ -31,6 +31,32 @@ stdenv.mkDerivation rec {
       --replace-fail \
         "configure_file(cmake/web_version.ts.in \''${CMAKE_SOURCE_DIR}/web/src/generated/version.ts @ONLY)" \
         "# skipped web_version.ts (read-only Nix source)"
+
+    # GCC 14: RefFrameBuffer uses size_t in the header without <cstddef>, so
+    # size() is never declared and av2_mux fails to compile.
+    python3 - <<'PY'
+from pathlib import Path
+p = Path("apps/av2_mux/ref_frame_buffer.h")
+if not p.is_file():
+    raise SystemExit
+text = p.read_text()
+if "#include <cstddef>" not in text:
+    if "#include <cstdint>" in text:
+        text = text.replace("#include <cstdint>", "#include <cstddef>\n#include <cstdint>", 1)
+    elif "#include <array>" in text:
+        text = text.replace("#include <array>", "#include <array>\n#include <cstddef>", 1)
+    else:
+        text = text.replace("#pragma once", "#pragma once\n\n#include <cstddef>", 1)
+if "size() const" not in text and "slots_" in text:
+    needle = "const RefSlot& slot(size_t i) const { return slots_[i]; }"
+    if needle in text:
+        text = text.replace(
+            needle,
+            needle + "\n  size_t size() const { return slots_.size(); }",
+            1,
+        )
+p.write_text(text)
+PY
   '';
 
   cmakeFlags = [
