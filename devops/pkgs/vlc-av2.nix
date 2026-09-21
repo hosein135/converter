@@ -302,6 +302,11 @@ PY
     "-Dlibssh2=disabled"
     "-Dcss_engine=disabled"
     "-Dssp=disabled"
+    # This Meson errors when an auto feature's .require() condition is false.
+    "-Dwasapi=disabled"
+    "-Dmacosx_avfoundation=disabled"
+    "-Dminimal_macosx=disabled"
+    "-Dsam3=disabled"
   ]
   ++ lib.optional (!stdenv.hostPlatform.isAarch64) "-Dbranch_protection=disabled";
 
