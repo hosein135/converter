@@ -57,6 +57,7 @@
   systemdLibs,
   libxkbcommon,
   qt6,
+  spirv-tools,
 
   dav2d-av2,
   src,
@@ -84,7 +85,14 @@ stdenv.mkDerivation rec {
     removeReferencesTo
     wayland-scanner
   ]
-  ++ lib.optionals withQt [ qt6.wrapQtAppsHook ];
+  ++ lib.optionals withQt [
+    qt6.wrapQtAppsHook
+    # qsb, qmltyperegistrar, and lrelease live in libexec, not bin.
+    qt6.qtshadertools
+    qt6.qtdeclarative
+    qt6.qttools
+    spirv-tools
+  ];
 
   buildInputs = [
     dav2d-av2
@@ -143,6 +151,11 @@ stdenv.mkDerivation rec {
   );
 
   strictDeps = true;
+
+  # Meson looks for qsb on PATH. Nix installs Qt host tools under libexec.
+  preConfigure = lib.optionalString withQt ''
+    export PATH="${qt6.qtshadertools}/libexec:${qt6.qtdeclarative}/libexec:${qt6.qttools}/libexec:${qt6.qtbase}/libexec''${PATH:+:}$PATH"
+  '';
 
   # VLC 4 currently requires a very new Meson; nixpkgs 25.05 is older.
   # The f-string syntax in meson.build needs Meson >= 1.3, which 25.05 has.
