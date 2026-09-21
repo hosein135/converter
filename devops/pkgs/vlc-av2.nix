@@ -163,6 +163,11 @@ stdenv.mkDerivation rec {
     substituteInPlace meson.build \
       --replace-fail "meson_version: '>=1.10.0')" "meson_version: '>=1.3.0')"
 
+    # shortname is an OS/2 DLL name (Meson >= 1.10). Linux ignores it, and
+    # nixpkgs 25.05 Meson rejects the keyword.
+    substituteInPlace modules/meson.build \
+      --replace-fail "shortname: shortname," ""
+
     if ! grep -q "option('dav2d'" meson_options.txt; then
       cat >> meson_options.txt <<'EOF'
 
