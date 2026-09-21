@@ -1,0 +1,35 @@
+# Nix / run.sh artifacts
+result
+result-*
+.result/
+.result-*/
+.av2converter-nix-ready
+.av2converter-bootstrap/
+.av2converter-data/
+.av2converter-dev-source.fp
+
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.env
+.env.*
+
+# Editors / OS
+.direnv/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~
+*.swp
+*.swo
+
+# Logs and local encodes
+*.log
+*.y4m
+*.ivf
+*.obu
