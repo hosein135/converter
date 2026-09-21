@@ -33,6 +33,7 @@
   libGL,
   libplacebo,
   libpulseaudio,
+  pipewire,
   librsvg,
   libsamplerate,
   libva,
@@ -105,6 +106,7 @@ stdenv.mkDerivation rec {
     libGL
     libplacebo
     libpulseaudio
+    pipewire
     librsvg
     libsamplerate
     libva
@@ -224,6 +226,7 @@ PY
     "-Dx11=enabled"
     "-Dwayland=auto"
     "-Dpulse=auto"
+    "-Dpipewire=auto"
     "-Dalsa=auto"
     "-Dfreetype=auto"
     "-Dfontconfig=auto"
