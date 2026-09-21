@@ -50,10 +50,8 @@ stdenv.mkDerivation rec {
   # default Release flags from upstream.
   enableParallelBuilding = true;
 
-  outputs = [
-    "out"
-    "dev"
-  ];
+  # Keep a single output. Splitting out/dev makes avm.pc and the shared
+  # library point at each other, which Nix rejects as a reference cycle.
 
   meta = with lib; {
     description = "AOMedia Video Model — AV2 v1.0.0 reference encoder/decoder";
