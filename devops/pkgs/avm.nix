@@ -28,8 +28,11 @@ stdenv.mkDerivation rec {
   ];
 
   # AVM refuses in-tree builds; the Nix cmake setup already uses a build dir.
+  # TensorFlow Lite (required for ML partition) is not installed by upstream.
+  # BUILD_SHARED_LIBS=ON turned it into libtensorflow-lite.so, which avmenc
+  # then could not find. Static linking matches upstream's TFLite setup.
   cmakeFlags = [
-    "-DBUILD_SHARED_LIBS=ON"
+    "-DBUILD_SHARED_LIBS=OFF"
     "-DENABLE_TESTS=OFF"
     "-DENABLE_DOCS=OFF"
     "-DENABLE_EXAMPLES=ON"
