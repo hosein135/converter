@@ -169,7 +169,7 @@ if "files('dav2d.c')" in text:
     raise SystemExit
 insert = """
 # dav2d AV2 decoder (vlc-av2)
-dav2d_dep = dependency('dav2d', version: '>= 1.0.0', required: get_option('dav2d'))
+dav2d_dep = dependency('dav2d', version: '>= 0.0.1', required: get_option('dav2d'))
 vlc_modules += {
     'name' : 'dav2d',
     'sources' : files('dav2d.c'),
