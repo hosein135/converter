@@ -26,7 +26,7 @@ First run compiles AVM (`avmenc`), dav2d-av2, exhale, and the vlc-av2 player fro
 **Convert tab**
 
 1. Choose a source video.
-2. Optional speed / quality / max width / 8- or 10-bit / xHE-AAC mode.
+2. Optional speed, quality, and xHE-AAC mode. Resolution, frame rate, and bit depth are left as in the source.
 3. Convert:
    - ffmpeg decodes video to Y4M and audio to 48 kHz WAV
    - `avmenc` encodes **AV2**
@@ -63,6 +63,6 @@ av2-converter
 
 ## Notes
 
-- AVM is a **reference** encoder. It is much slower than production AV1 encoders. Keep **max width** at 1280 (or less) and **cpu-used** high unless you want a long encode.
+- AVM is a **reference** encoder. It is much slower than production AV1 encoders. A 720p keyframe can take several minutes. **cpu-used** higher is faster.
 - xHE-AAC encoding uses [exhale](https://gitlab.com/ecodis/exhale). Modes `0`–`9` are CVBR without SBR; `a`–`g` enable SBR.
 - This repository is not affiliated with VideoLAN or AOMedia.

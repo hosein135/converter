@@ -23,8 +23,6 @@ class ConvertError(RuntimeError):
 class ConvertSettings:
     cpu_used: int = 8
     cq_level: int = 32
-    bit_depth: int = 10
-    max_width: int = 1280
     audio_mode: str = "5"  # exhale CVBR 0-9 / a-g
     keep_work: bool = False
 
@@ -103,16 +101,23 @@ def _fps(stream: dict | None) -> tuple[int, int]:
     return 30, 1
 
 
-def _scale_filter(stream: dict | None, max_width: int) -> str | None:
-    if max_width <= 0 or not stream:
-        return None
+def _bit_depth(stream: dict | None) -> int:
+    """Bit depth of the source picture. The encode keeps this instead of upconverting."""
+    if not stream:
+        return 8
+    raw = stream.get("bits_per_raw_sample")
     try:
-        width = int(stream.get("width") or 0)
+        bits = int(raw or 0)
     except (TypeError, ValueError):
-        width = 0
-    if width <= max_width:
-        return None
-    return f"scale={max_width}:-2"
+        bits = 0
+    if bits > 0:
+        return bits
+    pix = str(stream.get("pix_fmt") or "")
+    if "12" in pix:
+        return 12
+    if "10" in pix:
+        return 10
+    return 8
 
 
 def convert_file(
@@ -146,11 +151,15 @@ def convert_file(
         raise ConvertError("No video stream in the source file")
 
     fps_num, fps_den = _fps(video)
+    bit_depth = _bit_depth(video)
+    try:
+        width = int(video.get("width") or 0)
+        height = int(video.get("height") or 0)
+    except (TypeError, ValueError):
+        width, height = 0, 0
+    pix = str(video.get("pix_fmt") or "yuv420p")
     dest = Path(output).expanduser() if output else converted_dir() / f"{src.stem}.av2.mp4"
     dest.parent.mkdir(parents=True, exist_ok=True)
-
-    pix = "yuv420p10le" if settings.bit_depth >= 10 else "yuv420p"
-    vf = _scale_filter(video, settings.max_width)
 
     work = Path(tempfile.mkdtemp(prefix="av2converter-"))
     try:
@@ -161,6 +170,10 @@ def convert_file(
         audio_m4a = work / "audio.m4a"
         video_mp4 = work / "video.mp4"
 
+        log(
+            f"Keeping source video: {width}x{height}, {fps_num}/{fps_den} fps, "
+            f"{bit_depth}-bit {pix}. Only the codec changes."
+        )
         log("Decoding video to Y4M for the AV2 reference encoder…")
         decode_video = [
             ffmpeg,
@@ -168,14 +181,11 @@ def convert_file(
             "-i",
             str(src),
             "-an",
-            "-pix_fmt",
-            pix,
+            "-fps_mode",
+            "passthrough",
         ]
-        if pix == "yuv420p10le":
+        if bit_depth > 8:
             decode_video += ["-strict", "unofficial"]
-        if vf:
-            decode_video += ["-vf", vf]
-            log(f"Scaling filter: {vf}")
         decode_video += [str(y4m)]
         _run(decode_video, log)
 
@@ -208,7 +218,7 @@ def convert_file(
             f"--cpu-used={settings.cpu_used}",
             "--end-usage=q",
             f"--cq-level={settings.cq_level}",
-            f"--bit-depth={settings.bit_depth}",
+            f"--bit-depth={bit_depth}",
             f"--fps={fps_num}/{fps_den}",
             "-o",
             str(ivf),
@@ -273,7 +283,10 @@ def convert_file(
 
         extra = {
             "fps": f"{fps_num}/{fps_den}",
-            "bit_depth": settings.bit_depth,
+            "bit_depth": bit_depth,
+            "width": width,
+            "height": height,
+            "pix_fmt": pix,
             "audio_codec": "xHE-AAC" if has_audio else "none",
         }
         library.add_item(source=str(src), output=str(dest), extra=extra)

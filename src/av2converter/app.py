@@ -31,8 +31,6 @@ class ConverterApp(tk.Tk):
         self._output = tk.StringVar()
         self._cpu = tk.IntVar(value=8)
         self._cq = tk.IntVar(value=32)
-        self._depth = tk.IntVar(value=10)
-        self._max_width = tk.IntVar(value=1280)
         self._audio_mode = tk.StringVar(value="5")
         self._status = tk.StringVar(value="Ready")
         self._configure_style()
@@ -123,22 +121,9 @@ class ConverterApp(tk.Tk):
         opts.pack(fill=tk.X, pady=16)
         self._labeled_spin(opts, "Speed (cpu-used, higher = faster)", self._cpu, 0, 9, 0)
         self._labeled_spin(opts, "Quality (cq-level, lower = better)", self._cq, 10, 55, 1)
-        self._labeled_spin(opts, "Max width (0 = source)", self._max_width, 0, 7680, 2)
-
-        depth_row = ttk.Frame(opts)
-        depth_row.grid(row=0, column=3, padx=16, sticky="w")
-        ttk.Label(depth_row, text="Video bit depth").pack(anchor="w")
-        depth = ttk.Combobox(
-            depth_row,
-            textvariable=self._depth,
-            values=(8, 10),
-            width=8,
-            state="readonly",
-        )
-        depth.pack(anchor="w", pady=(4, 0))
 
         audio_row = ttk.Frame(opts)
-        audio_row.grid(row=1, column=3, padx=16, sticky="w")
+        audio_row.grid(row=0, column=2, padx=16, sticky="w")
         ttk.Label(audio_row, text="xHE-AAC mode").pack(anchor="w")
         modes = list("0123456789") + list("abcdefg")
         ttk.Combobox(
@@ -151,9 +136,10 @@ class ConverterApp(tk.Tk):
 
         ttk.Label(
             parent,
-            text="AV2 uses the AOMedia AVM reference encoder — expect a long encode. "
-            "Playback of finished files is handled by vlc-av2 "
-            "(https://github.com/afen261/vlc-av2).",
+            text="Resolution, frame rate, and bit depth stay as in the source. "
+            "Only the video codec becomes AV2 and the audio codec becomes xHE-AAC. "
+            "AVM is a reference encoder, so a 720p clip can still take several minutes per keyframe. "
+            "Playback uses vlc-av2 (https://github.com/afen261/vlc-av2).",
             style="Muted.TLabel",
             wraplength=820,
         ).pack(anchor="w")
@@ -261,8 +247,6 @@ class ConverterApp(tk.Tk):
         settings = ConvertSettings(
             cpu_used=int(self._cpu.get()),
             cq_level=int(self._cq.get()),
-            bit_depth=int(self._depth.get()),
-            max_width=int(self._max_width.get()),
             audio_mode=str(self._audio_mode.get()),
         )
         self._busy = True
