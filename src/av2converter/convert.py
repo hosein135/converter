@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import tempfile
@@ -21,7 +22,7 @@ class ConvertError(RuntimeError):
 
 @dataclass
 class ConvertSettings:
-    cpu_used: int = 8
+    cpu_used: int = 9
     cq_level: int = 32
     audio_mode: str = "5"  # exhale CVBR 0-9 / a-g
     keep_work: bool = False
@@ -209,21 +210,35 @@ def convert_file(
                 log,
             )
 
+        threads = max(1, os.cpu_count() or 1)
+        # Picture size, frame rate, and bit depth stay as probed. These flags
+        # only cut the reference encoder's search so a short clip can finish.
+        tile_columns = 2 if threads >= 4 else 1 if threads >= 2 else 0
         log(
             f"Encoding AV2 with AVM avmenc (cpu-used={settings.cpu_used}, "
-            f"cq={settings.cq_level}). This is a reference encoder and can be slow."
+            f"cq={settings.cq_level}, threads={threads}). "
+            "The first frame is the slow one; later frames print a POC line each."
         )
         encode = [
             avmenc,
             f"--cpu-used={settings.cpu_used}",
+            f"--threads={threads}",
+            "--row-mt=1",
+            "--lag-in-frames=0",
+            "--auto-alt-ref=0",
+            "--enable-tpl-model=0",
+            "--enable-keyframe-filtering=0",
+            "--use-ml-erp-pruning=0",
+            "--min-partition-size=16",
+            "--reduced-tx-part-set=1",
             "--end-usage=q",
             f"--cq-level={settings.cq_level}",
             f"--bit-depth={bit_depth}",
             f"--fps={fps_num}/{fps_den}",
-            "-o",
-            str(ivf),
-            str(y4m),
         ]
+        if tile_columns:
+            encode.append(f"--tile-columns={tile_columns}")
+        encode += ["-o", str(ivf), str(y4m)]
         try:
             _run(encode, log)
         except ConvertError:

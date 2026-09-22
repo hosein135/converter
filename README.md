@@ -63,6 +63,6 @@ av2-converter
 
 ## Notes
 
-- AVM is a **reference** encoder. It is much slower than production AV1 encoders. A 720p keyframe can take several minutes. **cpu-used** higher is faster.
+- AVM is a **reference** encoder, so it is slower than a production encoder. The converter uses every CPU, `cpu-used` 9, and a reduced partition search. Higher **cpu-used** is faster.
 - xHE-AAC encoding uses [exhale](https://gitlab.com/ecodis/exhale). Modes `0`–`9` are CVBR without SBR; `a`–`g` enable SBR.
 - This repository is not affiliated with VideoLAN or AOMedia.

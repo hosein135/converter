@@ -29,7 +29,7 @@ class ConverterApp(tk.Tk):
         self._busy = False
         self._source = tk.StringVar()
         self._output = tk.StringVar()
-        self._cpu = tk.IntVar(value=8)
+        self._cpu = tk.IntVar(value=9)
         self._cq = tk.IntVar(value=32)
         self._audio_mode = tk.StringVar(value="5")
         self._status = tk.StringVar(value="Ready")
@@ -138,7 +138,7 @@ class ConverterApp(tk.Tk):
             parent,
             text="Resolution, frame rate, and bit depth stay as in the source. "
             "Only the video codec becomes AV2 and the audio codec becomes xHE-AAC. "
-            "AVM is a reference encoder, so a 720p clip can still take several minutes per keyframe. "
+            "AVM uses every CPU and a faster search so a short clip can finish. "
             "Playback uses vlc-av2 (https://github.com/afen261/vlc-av2).",
             style="Muted.TLabel",
             wraplength=820,
