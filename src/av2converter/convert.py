@@ -197,7 +197,7 @@ def convert_file(
             f"Keeping source video: {width}x{height}, {fps_num}/{fps_den} fps, "
             f"{bit_depth}-bit {pix}. Only the codec changes."
         )
-        accel = _hwaccel(ffmpeg)
+        accel = None if os.environ.get("AV2_CPU_ONLY") == "1" else _hwaccel(ffmpeg)
         decode_video = [ffmpeg, "-y"]
         if accel:
             log(f"Decoding on the NVIDIA GPU ({accel}) into Y4M…")
