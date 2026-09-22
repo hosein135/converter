@@ -7,6 +7,7 @@ result-*
 .av2converter-bootstrap/
 .av2converter-data/
 .av2converter-dev-source.fp
+.colab-build/
 
 # Python
 **/__pycache__/
