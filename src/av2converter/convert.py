@@ -102,6 +102,28 @@ def _fps(stream: dict | None) -> tuple[int, int]:
     return 30, 1
 
 
+def _hwaccel(ffmpeg: str) -> str | None:
+    proc = subprocess.run(
+        [ffmpeg, "-hide_banner", "-hwaccels"],
+        capture_output=True,
+        text=True,
+    )
+    names = {line.strip() for line in (proc.stdout or "").splitlines()}
+    if "cuda" in names:
+        return "cuda"
+    if "nvdec" in names:
+        return "nvdec"
+    return None
+
+
+def _gpu_pix_fmt(bit_depth: int, pix: str) -> str:
+    if bit_depth <= 8:
+        return "yuv420p" if "422" not in pix and "444" not in pix else pix
+    if bit_depth == 10 and "444" not in pix and "422" not in pix:
+        return "yuv420p10le"
+    return pix
+
+
 def _bit_depth(stream: dict | None) -> int:
     """Bit depth of the source picture. The encode keeps this instead of upconverting."""
     if not stream:
@@ -175,20 +197,30 @@ def convert_file(
             f"Keeping source video: {width}x{height}, {fps_num}/{fps_den} fps, "
             f"{bit_depth}-bit {pix}. Only the codec changes."
         )
-        log("Decoding video to Y4M for the AV2 reference encoder…")
-        decode_video = [
-            ffmpeg,
-            "-y",
-            "-i",
-            str(src),
-            "-an",
-            "-fps_mode",
-            "passthrough",
-        ]
+        accel = _hwaccel(ffmpeg)
+        decode_video = [ffmpeg, "-y"]
+        if accel:
+            log(f"Decoding on the NVIDIA GPU ({accel}) into Y4M…")
+            decode_video += ["-hwaccel", accel, "-hwaccel_output_format", "cuda", "-i", str(src), "-an"]
+            decode_video += ["-vf", f"hwdownload,format={_gpu_pix_fmt(bit_depth, pix)}"]
+        else:
+            log("Decoding video to Y4M for the AV2 reference encoder…")
+            decode_video += ["-i", str(src), "-an"]
+        decode_video += ["-fps_mode", "passthrough"]
         if bit_depth > 8:
             decode_video += ["-strict", "unofficial"]
         decode_video += [str(y4m)]
-        _run(decode_video, log)
+        try:
+            _run(decode_video, log)
+        except ConvertError:
+            if not accel:
+                raise
+            log("GPU decode failed. Decoding on the CPU instead.")
+            decode_video = [ffmpeg, "-y", "-i", str(src), "-an", "-fps_mode", "passthrough"]
+            if bit_depth > 8:
+                decode_video += ["-strict", "unofficial"]
+            decode_video += [str(y4m)]
+            _run(decode_video, log)
 
         if audio is not None:
             log("Decoding audio to 48 kHz stereo WAV for exhale…")
